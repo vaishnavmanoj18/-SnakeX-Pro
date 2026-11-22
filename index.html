@@ -1,1231 +1,350 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SnakeX Pro - Online Multiplayer</title>
-
-<!-- Firebase SDK -->
+<title>SnakeX Pro — Online Multiplayer</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    background: #080e1c;
-    color: white;
-    min-height: 100vh;
-}
-
-header {
-    background: #111d32;
-    padding: 20px;
-    text-align: center;
-    border-bottom: 1px solid #304260;
-}
-
-header h1 {
-    font-size: 30px;
-}
-
-header span {
-    color: #39e89a;
-}
-
-.container {
-    width: 94%;
-    max-width: 1000px;
-    margin: 25px auto;
-}
-
-.hero {
-    text-align: center;
-    margin-bottom: 25px;
-}
-
-.hero h2 {
-    font-size: 32px;
-    margin-bottom: 10px;
-}
-
-.hero p {
-    color: #a5b4ca;
-    line-height: 1.6;
-}
-
-.panel {
-    background: #121e33;
-    border: 1px solid #304260;
-    border-radius: 15px;
-    padding: 20px;
-    margin-bottom: 18px;
-}
-
-h3 {
-    margin-bottom: 15px;
-}
-
-input {
-    width: 100%;
-    padding: 13px;
-    margin: 8px 0 15px;
-    border: 1px solid #405473;
-    border-radius: 8px;
-    background: #081326;
-    color: white;
-    font-size: 16px;
-}
-
-button {
-    padding: 12px 18px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 14px;
-    margin: 4px;
-    transition: .2s;
-}
-
-button:hover {
-    filter: brightness(1.15);
-}
-
-button:disabled {
-    opacity: .5;
-    cursor: not-allowed;
-}
-
-.primary {
-    background: #7355ed;
-    color: white;
-}
-
-.success {
-    background: #16a36c;
-    color: white;
-}
-
-.danger {
-    background: #e34562;
-    color: white;
-}
-
-.secondary {
-    background: #293b58;
-    color: white;
-}
-
-.room-code {
-    color: #39e89a;
-    font-size: 35px;
-    font-weight: bold;
-    letter-spacing: 6px;
-    text-align: center;
-    margin: 18px 0;
-    overflow-wrap: anywhere;
-}
-
-.status {
-    padding: 14px;
-    background: #091629;
-    border: 1px solid #304260;
-    border-radius: 9px;
-    margin-top: 15px;
-    color: #39e89a;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
-}
-
-.players {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-top: 15px;
-}
-
-.player {
-    background: #0b172a;
-    padding: 15px;
-    border-radius: 10px;
-    border: 1px solid #304260;
-    text-align: center;
-}
-
-.player strong {
-    display: block;
-    font-size: 24px;
-    color: #39e89a;
-    margin-top: 10px;
-}
-
-canvas {
-    display: block;
-    width: 100%;
-    max-width: 600px;
-    height: auto;
-    background: #071020;
-    border: 2px solid #405473;
-    border-radius: 10px;
-    margin: 18px auto;
-}
-
-.controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-}
-
-.controls button {
-    min-width: 110px;
-}
-
-.mobile-controls {
-    display: grid;
-    grid-template-columns: repeat(3, 55px);
-    gap: 5px;
-    justify-content: center;
-    margin: 20px auto;
-}
-
-.mobile-controls button {
-    height: 48px;
-    background: #293b58;
-    color: white;
-    font-size: 20px;
-}
-
-.hidden {
-    display: none !important;
-}
-
-.muted {
-    color: #a5b4ca;
-    font-size: 13px;
-    line-height: 1.6;
-}
-
-footer {
-    text-align: center;
-    padding: 25px;
-    color: #a5b4ca;
-}
-
-@media(max-width:600px) {
-    .players {
-        grid-template-columns: 1fr;
-    }
-
-    .hero h2 {
-        font-size: 25px;
-    }
-
-    .room-code {
-        font-size: 28px;
-    }
-}
+:root{--bg:#080e1c;--panel:#121e33;--line:#304260;--green:#39e89a;--muted:#a5b4ca;--purple:#7355ed;--pink:#ec4899}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font-family:Arial,sans-serif;min-height:100vh}header{background:#111d32;padding:20px;text-align:center;border-bottom:1px solid var(--line)}header h1{margin:0 0 6px;font-size:30px}header span{color:var(--green)}.container{width:min(94%,1000px);margin:25px auto}.hero{text-align:center;margin-bottom:24px}.hero h2{font-size:30px;margin:0 0 8px}.hero p,.muted{color:var(--muted);line-height:1.5}.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:20px;margin-bottom:18px}h3{margin:0 0 14px}label{display:block;font-size:13px;margin:8px 0}.field{width:100%;padding:13px;margin:5px 0 14px;border:1px solid #405473;border-radius:8px;background:#081326;color:white;font-size:16px}button{padding:12px 17px;border:0;border-radius:8px;cursor:pointer;font-weight:bold;font-size:14px;margin:4px;transition:.2s}button:hover{filter:brightness(1.12)}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--purple);color:#fff}.success{background:#16a36c;color:#fff}.danger{background:#e34562;color:#fff}.secondary{background:#293b58;color:#fff}.room-code{text-align:center;color:var(--green);font-size:35px;font-weight:bold;letter-spacing:6px;margin:18px 0;overflow-wrap:anywhere}.status{padding:13px;background:#091629;border:1px solid var(--line);border-radius:9px;margin-top:13px;color:var(--green);line-height:1.5;overflow-wrap:anywhere}.players{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:15px 0}.player{background:#0b172a;padding:14px;border-radius:10px;border:1px solid var(--line);text-align:center}.player p{margin:7px 0}.player strong{display:block;font-size:24px;color:var(--green);margin-top:8px}canvas{display:block;width:100%;max-width:600px;height:auto;background:#071020;border:2px solid #405473;border-radius:10px;margin:18px auto;touch-action:none}.controls{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}.controls button{min-width:110px}.mobile-controls{display:grid;grid-template-columns:repeat(3,56px);gap:5px;justify-content:center;margin:20px auto}.mobile-controls button{height:48px;background:#293b58;color:#fff;font-size:20px;touch-action:manipulation}.mobile-controls span{display:block}.muted{text-align:center;font-size:13px}footer{text-align:center;padding:24px;color:var(--muted)}hr{border:0;border-top:1px solid var(--line);margin:18px 0}.hint{font-size:12px;color:var(--muted);line-height:1.5}@media(max-width:600px){.players{grid-template-columns:1fr}.hero h2{font-size:24px}.room-code{font-size:28px}.panel{padding:15px}}
 </style>
 </head>
-
 <body>
-
-<header>
-    <h1>🐍 Snake<span>X</span> Pro</h1>
-    <p>Ultimate Online Multiplayer Game</p>
-</header>
-
-<div class="container">
-
-    <div class="hero">
-        <h2>Play With Your Friends!</h2>
-        <p>Create a room, share your Room ID and challenge your friends.</p>
+<header><h1>🐍 Snake<span>X</span> Pro</h1><p>Online Multiplayer Arena</p></header>
+<main class="container">
+  <section class="hero"><h2>Play With Your Friends!</h2><p>Create a room, share its ID, and challenge another player.</p></section>
+  <section class="panel">
+    <h3>👤 Player Profile</h3>
+    <label for="playerName">Your player name</label>
+    <input class="field" id="playerName" maxlength="20" placeholder="Enter your name" autocomplete="nickname">
+  </section>
+  <section class="panel">
+    <h3>🌍 Online Multiplayer</h3>
+    <button class="success" id="createBtn">＋ Create Room</button>
+    <hr>
+    <label for="roomInput">Enter Room ID to Join</label>
+    <input class="field" id="roomInput" maxlength="6" placeholder="6-character Room ID" autocomplete="off">
+    <button class="primary" id="joinBtn">🚀 Join Room</button>
+    <button class="danger" id="leaveBtn">Leave Room</button>
+    <div class="room-code" id="roomCode">------</div>
+    <div style="text-align:center"><button class="secondary" id="copyBtn">▣ Copy Room ID</button></div>
+    <div class="status" id="status" role="status" aria-live="polite">Connecting to Firebase…</div>
+  </section>
+  <section class="panel">
+    <h3>🎮 Multiplayer Arena</h3>
+    <div class="players">
+      <div class="player"><h3>🟢 Player 1</h3><p id="player1Name">Waiting…</p><strong id="score1">0</strong></div>
+      <div class="player"><h3>🔴 Player 2</h3><p id="player2Name">Waiting…</p><strong id="score2">0</strong></div>
     </div>
-
-    <!-- PLAYER DETAILS -->
-    <div class="panel">
-        <h3>👤 Player Profile</h3>
-
-        <label>Your Player Name</label>
-        <input id="playerName" maxlength="20" placeholder="Enter your name">
+    <canvas id="game" width="600" height="400" aria-label="Snake multiplayer game board"></canvas>
+    <div class="controls">
+      <button class="success" id="startBtn" disabled>▶ Start Game</button>
+      <button class="secondary" id="pauseBtn" disabled>Ⅱ Pause</button>
+      <button class="secondary" id="restartBtn" disabled>↻ New Match</button>
     </div>
-
-    <!-- ROOM MANAGEMENT -->
-    <div class="panel">
-        <h3>🌍 Online Multiplayer</h3>
-
-        <button class="success" id="createBtn">
-            ➕ Create Room
-        </button>
-
-        <hr style="border-color:#304260;margin:18px 0">
-
-        <label>Enter Room ID to Join</label>
-        <input id="roomInput" maxlength="6" autocomplete="off" spellcheck="false"
-               placeholder="Enter 6-character Room ID">
-
-        <button class="primary" id="joinBtn">
-            🚀 Join Room
-        </button>
-
-        <button class="danger" id="leaveBtn">
-            Leave Room
-        </button>
-
-        <div class="room-code" id="roomCode">------</div>
-
-        <button class="secondary" id="copyBtn">
-            📋 Copy Room ID
-        </button>
-
-        <div class="status" id="status">
-            Connecting to Firebase...
-        </div>
+    <div class="mobile-controls" aria-label="Touch controls">
+      <span></span><button data-direction="up" aria-label="Move up">⬆</button><span></span>
+      <button data-direction="left" aria-label="Move left">⬅</button><button data-direction="down" aria-label="Move down">⬇</button><button data-direction="right" aria-label="Move right">➡</button>
     </div>
-
-    <!-- GAME -->
-    <div class="panel">
-        <h3>🎮 Multiplayer Arena</h3>
-
-        <div class="players">
-
-            <div class="player">
-                <h3>🟢 Player 1</h3>
-                <p id="player1Name">Waiting...</p>
-                <strong id="score1">0</strong>
-            </div>
-
-            <div class="player">
-                <h3>🔴 Player 2</h3>
-                <p id="player2Name">Waiting...</p>
-                <strong id="score2">0</strong>
-            </div>
-
-        </div>
-
-        <canvas id="game" width="600" height="400"></canvas>
-
-        <div class="controls">
-            <button class="success" id="startBtn" disabled>
-                ▶ Start Game
-            </button>
-
-            <button class="secondary" id="pauseBtn" disabled>
-                ⏸ Pause
-            </button>
-        </div>
-
-        <div class="mobile-controls">
-            <span></span>
-            <button data-direction="up">⬆</button>
-            <span></span>
-
-            <button data-direction="left">⬅</button>
-            <button data-direction="down">⬇</button>
-            <button data-direction="right">➡</button>
-        </div>
-
-        <p class="muted" style="text-align:center;margin-top:15px">
-            Both players: WASD or Arrow Keys (on your own device)
-        </p>
-
-        <div class="status" id="gameStatus">
-            Create or join a room to begin.
-        </div>
-    </div>
-
-</div>
-
-<footer>
-    SnakeX Pro © 2026 | Built with HTML, CSS, JavaScript and Firebase
-</footer>
-
+    <p class="muted">Use Arrow Keys or W A S D on your own device. Touch controls also work.</p>
+    <div class="status" id="gameStatus" role="status" aria-live="polite">Create or join a room to begin.</div>
+  </section>
+</main>
+<footer>SnakeX Pro © 2026 | HTML • CSS • JavaScript • Firebase</footer>
 <script>
+'use strict';
 
-// ======================================================
-// 1. FIREBASE CONFIGURATION
-// ======================================================
-
+// Firebase web app configuration supplied for your SnakeX Pro project.
 const firebaseConfig = {
-    apiKey: "AIzaSyDIHqzPVpb3Fs4o-jBsLWF7vdjS8R0e_nk",
-    authDomain: "snakex-pro.firebaseapp.com",
-    databaseURL: "https://snakex-pro-default-rtdb.firebaseio.com",
-    projectId: "snakex-pro",
-    storageBucket: "snakex-pro.firebasestorage.app",
-    messagingSenderId: "353460939475",
-    appId: "1:353460939475:web:3e33a4a7a8149ba50d2c226"
+  apiKey: "AIzaSyDIHqzPVpb3Fs4o-jBsLWF7vdjS8R0e_nk",
+  authDomain: "snakex-pro.firebaseapp.com",
+  databaseURL: "https://snakex-pro-default-rtdb.firebaseio.com",
+  projectId: "snakex-pro",
+  storageBucket: "snakex-pro.firebasestorage.app",
+  messagingSenderId: "353460939475",
+  appId: "1:353460939475:web:3e33a4a7a8149ba50d2c226"
 };
 
-let db;
+const $ = id => document.getElementById(id);
+const canvas = $('game');
+const ctx = canvas.getContext('2d');
+const CELL = 20, COLS = canvas.width / CELL, ROWS = canvas.height / CELL;
+let db = null, roomRef = null, roomId = null, role = null;
+let roomCallback = null, stateCallback = null, directionsCallback = null;
+let loopTimer = null, loopBusy = false;
+let gameRunning = false, paused = false, started = false;
+let snake1 = [], snake2 = [], food = {x:15,y:10};
+let hostDirection = 'right', guestDirection = 'left';
+let score1 = 0, score2 = 0;
+let lastDirectionSent = 0;
 
-try {
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.database();
-    db.ref(".info/connected").on("value", snap => {
-        setStatus(snap.val() ? "Firebase connected successfully!" : "Connecting to Firebase...");
+function setStatus(message){ $('status').textContent = message; }
+function gameMessage(message){ $('gameStatus').textContent = message; }
+function playerName(){ return $('playerName').value.trim().slice(0,20) || 'Player'; }
+function makeRoomCode(){ const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; let s=''; for(let i=0;i<6;i++) s+=chars[Math.floor(Math.random()*chars.length)]; return s; }
+function showRoom(code){ roomId=code; $('roomCode').textContent=code; $('roomInput').value=code; }
+function updateScores(){ $('score1').textContent=score1; $('score2').textContent=score2; }
+function setButtons(){
+  const inRoom=!!roomRef;
+  $('startBtn').disabled=!(role==='host' && inRoom && !started && $('player2Name').textContent!=='Waiting…');
+  $('pauseBtn').disabled=!(role==='host' && started);
+  $('restartBtn').disabled=!(role==='host' && inRoom && $('player2Name').textContent!=='Waiting…');
+}
+function stopLoop(){ if(loopTimer){clearTimeout(loopTimer);loopTimer=null;} gameRunning=false; }
+function detachListeners(){
+  if(!roomRef) return;
+  if(roomCallback) roomRef.off('value',roomCallback);
+  if(stateCallback) roomRef.child('state').off('value',stateCallback);
+  if(directionsCallback) roomRef.child('directions').off('value',directionsCallback);
+  roomCallback=stateCallback=directionsCallback=null;
+}
+function resetConnection(){ stopLoop(); detachListeners(); roomRef=null;roomId=null;role=null;started=false;paused=false;loopBusy=false; $('startBtn').disabled=true;$('pauseBtn').disabled=true;$('restartBtn').disabled=true; }
+function resetBoard(){
+  snake1=[{x:5,y:10},{x:4,y:10},{x:3,y:10}];
+  snake2=[{x:24,y:10},{x:25,y:10},{x:26,y:10}];
+  food={x:15,y:10};hostDirection='right';guestDirection='left';score1=0;score2=0;updateScores();draw();
+}
+function randomFood(){
+  const free=[];
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++) if(!snake1.concat(snake2).some(p=>p.x===x&&p.y===y)) free.push({x,y});
+  return free.length ? free[Math.floor(Math.random()*free.length)] : {x:0,y:0};
+}
+function moveSnake(snake,dir){const h={...snake[0]};if(dir==='up')h.y--;if(dir==='down')h.y++;if(dir==='left')h.x--;if(dir==='right')h.x++;return [h,...snake.slice(0,-1)];}
+function opposite(a,b){return (a==='up'&&b==='down')||(a==='down'&&b==='up')||(a==='left'&&b==='right')||(a==='right'&&b==='left');}
+function hitWallOrBody(head,snake,other){
+  if(head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS) return true;
+  if(snake.slice(1).some(p=>p.x===head.x&&p.y===head.y)) return true;
+  if(other.some(p=>p.x===head.x&&p.y===head.y)) return true;
+  return false;
+}
+function draw(){
+  ctx.fillStyle='#071020';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.strokeStyle='rgba(255,255,255,.055)';
+  for(let x=0;x<=canvas.width;x+=CELL){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();}
+  for(let y=0;y<=canvas.height;y+=CELL){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();}
+  ctx.fillStyle='#fb5577';ctx.beginPath();ctx.arc(food.x*CELL+10,food.y*CELL+10,8,0,Math.PI*2);ctx.fill();
+  snake1.forEach((p,i)=>{ctx.fillStyle=i===0?'#b8ffe0':'#39e89a';ctx.fillRect(p.x*CELL+1,p.y*CELL+1,CELL-3,CELL-3);});
+  snake2.forEach((p,i)=>{ctx.fillStyle=i===0?'#ffc0d8':'#ec4899';ctx.fillRect(p.x*CELL+1,p.y*CELL+1,CELL-3,CELL-3);});
+  if(!roomRef){ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='bold 25px Arial';ctx.fillText('SNAKEX PRO',300,190);ctx.font='14px Arial';ctx.fillText('Create or join a room to play',300,220);ctx.textAlign='left';}
+}
+
+async function createRoom(){
+  if(!db){setStatus('Firebase is not connected. Check the Firebase SDK and internet connection.');return;}
+  resetConnection();setStatus('Creating a room…');
+  try{
+    let newRef=null, code='';
+    for(let i=0;i<12;i++){
+      code=makeRoomCode();const candidate=db.ref('snakeRooms/'+code);
+      const result=await candidate.transaction(current=>current===null?{
+        host:playerName(),guest:'',status:'waiting',createdAt:Date.now(),
+        directions:{host:'right',guest:'left'},state:null,gamePaused:false
+      }:undefined);
+      if(result.committed){newRef=candidate;break;}
+    }
+    if(!newRef) throw new Error('Could not create a unique room. Please try again.');
+    roomRef=newRef;roomId=code;role='host';showRoom(code);
+    $('player1Name').textContent=playerName();$('player2Name').textContent='Waiting…';
+    resetBoard();listenToRoom();setStatus('Room created. Share '+code+' with Player 2.');gameMessage('Waiting for Player 2 to join.');setButtons();
+  }catch(err){console.error(err);setStatus('Create room failed: '+friendlyError(err));}
+}
+
+async function joinRoom(){
+  if(!db){setStatus('Firebase is not connected.');return;}
+  const code=$('roomInput').value.trim().toUpperCase();
+  if(!/^[A-Z0-9]{6}$/.test(code)){setStatus('Enter a valid 6-character Room ID.');return;}
+  if(role==='host'&&roomId===code){setStatus('You are the host of this room. Join from another browser or device.');return;}
+  // Don't discard a current host/guest session until the target room is validated.
+  setStatus('Checking room '+code+'…');
+  const targetRef=db.ref('snakeRooms/'+code);
+  try{
+    const check=await targetRef.once('value');
+    if(!check.exists()) throw new Error('Room not found. Check the Room ID.');
+    const current=check.val();
+    if(current.status!=='waiting') throw new Error('This room is not accepting players. Its status is '+String(current.status)+'. Create a new room.');
+    if(current.guest && String(current.guest).trim()) throw new Error('This room already has a guest. Ask the host for a new Room ID.');
+    const result=await targetRef.transaction(room=>{
+      if(!room || room.status!=='waiting' || (room.guest && String(room.guest).trim())) return;
+      room.guest=playerName();
+      // Keep status waiting until host presses Start. This avoids auto-start races.
+      room.status='ready';
+      room.directions=room.directions||{host:'right',guest:'left'};
+      room.directions.guest='left';
+      room.gamePaused=false;
+      return room;
     });
-} catch(error) {
-    console.error(error);
-    setStatus("Firebase initialization failed: " + error.message);
-}
-
-// ======================================================
-// 2. GLOBAL VARIABLES
-// ======================================================
-
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-const CELL = 20;
-const COLS = 30;
-const ROWS = 20;
-
-let roomRef = null;
-let roomId = null;
-let role = null;
-
-let roomListener = null;
-let stateListener = null;
-let directionListener = null;
-
-let gameTimer = null;
-let gameRunning = false;
-let paused = false;
-let started = false;
-
-let snake1 = [];
-let snake2 = [];
-
-let food = {x:15,y:10};
-
-let direction1 = "right";
-let direction2 = "left";
-
-let score1 = 0;
-let score2 = 0;
-
-let guestDirection = "left";
-let hostDirection = "right";
-
-let sendingDirection = false;
-let loopBusy = false;
-
-let gameState = "waiting";
-
-// ======================================================
-// 3. BASIC FUNCTIONS
-// ======================================================
-
-function setStatus(message) {
-    document.getElementById("status").textContent = message;
-}
-
-function gameMessage(message) {
-    document.getElementById("gameStatus").textContent = message;
-}
-
-function getPlayerName() {
-    return document.getElementById("playerName").value.trim() || "Player";
-}
-
-function randomCode() {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    let code = "";
-
-    for(let i = 0; i < 6; i++) {
-        code += chars[Math.floor(Math.random() * chars.length)];
+    if(!result.committed){
+      const latest=result.snapshot.val();
+      if(!latest) throw new Error('Room disappeared before you could join.');
+      if(latest.guest && String(latest.guest).trim()) throw new Error('Another player joined this room first. Try a different Room ID.');
+      if(latest.status!=='waiting') throw new Error('Room is no longer waiting. Current status: '+latest.status+'.');
+      throw new Error('Join transaction was not committed. Check Firebase Database Rules.');
     }
-
-    return code;
+    resetConnection();roomRef=targetRef;roomId=code;role='guest';showRoom(code);
+    const joined=result.snapshot.val();$('player1Name').textContent=joined.host||'Player 1';$('player2Name').textContent=joined.guest||playerName();
+    resetBoard();listenToRoom();setStatus('Joined room '+code+'. Waiting for the host to start.');gameMessage('You are Player 2. Use Arrow Keys or W A S D to move.');setButtons();
+  }catch(err){console.error('Join room error:',err);setStatus('Join failed: '+friendlyError(err));gameMessage('Could not join room.');}
 }
 
-function updateScores() {
-    document.getElementById("score1").textContent = score1;
-    document.getElementById("score2").textContent = score2;
+function friendlyError(err){
+  const msg=String(err&&err.message||err||'Unknown error');
+  if(/PERMISSION_DENIED|permission_denied/i.test(msg)) return 'Firebase permission denied. Check Realtime Database Rules for snakeRooms.';
+  if(/network|offline|disconnected/i.test(msg)) return 'Network/Firebase connection problem. Check your internet connection.';
+  return msg;
 }
 
-function showRoom(code) {
-    roomId = code;
-    document.getElementById("roomCode").textContent = code;
-    document.getElementById("roomInput").value = code;
-}
-
-function stopTimer() {
-    clearInterval(gameTimer);
-    gameTimer = null;
-    gameRunning = false;
-}
-
-function detachListeners() {
-    if(roomRef) {
-        if(roomListener) roomRef.off("value", roomListener);
-        if(stateListener) roomRef.child("state").off("value", stateListener);
-        if(directionListener) roomRef.child("directions").off("value", directionListener);
+function listenToRoom(){
+  if(!roomRef)return;
+  roomCallback=snap=>{
+    const room=snap.val();
+    if(!room){stopLoop();setStatus('This room no longer exists.');gameMessage('Room deleted.');return;}
+    $('player1Name').textContent=room.host||'Player 1';$('player2Name').textContent=room.guest||'Waiting…';
+    if(room.status==='waiting'){
+      setStatus('Room '+roomId+' is waiting for Player 2.');gameMessage('Waiting for another player.');
+    }else if(room.status==='ready'){
+      setStatus('Both players are connected. Host can start the match.');gameMessage(role==='host'?'Player 2 joined. Click Start Game.':'Joined successfully. Waiting for Player 1 to start.');
+    }else if(room.status==='playing'){
+      setStatus('Match in progress • Room '+roomId);
+      if(room.gamePaused){paused=true;gameMessage('Game paused by the host.');}
+      else if(role==='guest'){paused=false;gameMessage('Game running. You control the pink snake.');}
+      if(role==='host' && !started) startHostLoopFromRoom();
+    }else if(room.status==='finished'){
+      stopLoop();started=false;paused=false;gameMessage('🏆 Winner: '+(room.winner||'Draw')+' • Scores: '+(room.finalScore1||0)+' - '+(room.finalScore2||0));setStatus('Match finished. Host can start a new match.');
+    }else if(room.status==='closed'){
+      stopLoop();gameMessage('The host closed this room.');setStatus('Room closed.');
     }
-
-    roomListener = null;
-    stateListener = null;
-    directionListener = null;
+    setButtons();
+  };
+  roomRef.on('value',roomCallback,err=>{console.error(err);setStatus('Room listener error: '+friendlyError(err));});
+  if(role==='host'){
+    directionsCallback=snap=>{const d=snap.val()||{};hostDirection=d.host||hostDirection;guestDirection=d.guest||guestDirection;};
+    roomRef.child('directions').on('value',directionsCallback,err=>setStatus('Direction listener: '+friendlyError(err)));
+  }else{
+    stateCallback=snap=>{const s=snap.val();if(!s)return;snake1=Array.isArray(s.snake1)?s.snake1:snake1;snake2=Array.isArray(s.snake2)?s.snake2:snake2;food=s.food||food;score1=Number(s.score1)||0;score2=Number(s.score2)||0;updateScores();draw();};
+    roomRef.child('state').on('value',stateCallback,err=>setStatus('Game sync error: '+friendlyError(err)));
+  }
 }
 
-function cleanupConnection() {
-    stopTimer();
-    detachListeners();
-
-    roomRef = null;
-    roomId = null;
-    role = null;
-
-    started = false;
-    paused = false;
-    loopBusy = false;
-
-    document.getElementById("startBtn").disabled = true;
-    document.getElementById("pauseBtn").disabled = true;
-
-    draw();
+async function startGame(){
+  if(role!=='host'||!roomRef)return;
+  try{
+    const snap=await roomRef.once('value');const room=snap.val();
+    if(!room||!room.guest){setStatus('Wait for Player 2 to join before starting.');return;}
+    if(room.status!=='ready'&&room.status!=='finished'){setStatus('Room is not ready to start.');return;}
+    stopLoop();resetBoard();started=false;paused=false;
+    await roomRef.update({status:'playing',gamePaused:false,winner:null,finalScore1:0,finalScore2:0,
+      directions:{host:'right',guest:'left'},state:{snake1,snake2,food,score1,score2,updatedAt:Date.now()}});
+    hostDirection='right';guestDirection='left';gameMessage('Game started! You control the green snake.');setStatus('Match started. Good luck!');startHostLoopFromRoom();setButtons();
+  }catch(err){console.error(err);setStatus('Could not start: '+friendlyError(err));}
+}
+function startHostLoopFromRoom(){
+  if(role!=='host'||started||!roomRef)return;
+  started=true;gameRunning=true;paused=false;setButtons();
+  if(loopTimer)clearTimeout(loopTimer);
+  scheduleHostTick();
+}
+function scheduleHostTick(){
+  if(!gameRunning||paused||!roomRef||role!=='host')return;
+  loopTimer=setTimeout(async()=>{
+    if(loopBusy||!gameRunning||paused)return scheduleHostTick();
+    loopBusy=true;
+    try{await hostGameTick();}catch(err){console.error(err);setStatus('Game update failed: '+friendlyError(err));}
+    finally{loopBusy=false;if(gameRunning&&!paused)scheduleHostTick();}
+  },145);
+}
+async function hostGameTick(){
+  if(!roomRef||!gameRunning||paused)return;
+  const n1=moveSnake(snake1,hostDirection),n2=moveSnake(snake2,guestDirection);
+  const h1=n1[0],h2=n2[0];
+  const hit1=hitWallOrBody(h1,n1,snake2),hit2=hitWallOrBody(h2,n2,snake1);
+  if(hit1||hit2){
+    let winner=hit1&&hit2?'Draw':hit1?'Player 2':'Player 1';
+    gameRunning=false;started=false;stopLoop();
+    await roomRef.update({status:'finished',winner,finalScore1:score1,finalScore2:score2,finishedAt:Date.now()});
+    return;
+  }
+  snake1=n1;snake2=n2;
+  if(snake1[0].x===food.x&&snake1[0].y===food.y){snake1.push({...snake1[snake1.length-1]});score1+=10;food=randomFood();}
+  else if(snake2[0].x===food.x&&snake2[0].y===food.y){snake2.push({...snake2[snake2.length-1]});score2+=10;food=randomFood();}
+  updateScores();draw();
+  await roomRef.child('state').set({snake1,snake2,food,score1,score2,updatedAt:Date.now()});
 }
 
-// ======================================================
-// 4. CREATE ROOM
-// ======================================================
-
-async function createRoom() {
-
-    if(!db) {
-        setStatus("Firebase is not connected.");
-        return;
-    }
-
-    cleanupConnection();
-
-    setStatus("Creating a new room...");
-
-    try {
-
-        let created = false;
-        let code = "";
-
-        for(let attempt = 0; attempt < 10; attempt++) {
-
-            code = randomCode();
-
-            const ref = db.ref("snakeRooms/" + code);
-
-            const result = await ref.transaction(current => {
-
-                if(current !== null) {
-                    return;
-                }
-
-                return {
-                    host: getPlayerName(),
-                    guest: "",
-                    status: "waiting",
-                    createdAt: Date.now(),
-
-                    directions: {
-                        host: "right",
-                        guest: "left"
-                    },
-
-                    state: null
-                };
-
-            });
-
-            if(result.committed) {
-                roomRef = ref;
-                created = true;
-                break;
-            }
-        }
-
-        if(!created) {
-            throw new Error("Could not create a unique room. Try again.");
-        }
-
-        role = "host";
-
-        showRoom(code);
-
-        document.getElementById("player1Name").textContent = getPlayerName();
-        document.getElementById("player2Name").textContent = "Waiting for player...";
-
-        setStatus("Room created! Share Room ID " + code + " with your friend.");
-
-        gameMessage("Waiting for Player 2 to join.");
-
-        listenToRoom();
-
-    } catch(error) {
-        console.error(error);
-        setStatus("Create Room Error: " + error.message);
-    }
+async function sendDirection(direction){
+  if(!roomRef||!role||!['up','down','left','right'].includes(direction))return;
+  const current=role==='host'?hostDirection:guestDirection;
+  if(opposite(current,direction))return;
+  // A small throttle prevents rapid repeated writes while keeping controls responsive.
+  const now=Date.now();if(now-lastDirectionSent<35)return;lastDirectionSent=now;
+  try{
+    if(role==='host') hostDirection=direction; else guestDirection=direction;
+    await roomRef.child('directions/'+role).set(direction);
+  }catch(err){console.error(err);gameMessage('Could not send movement: '+friendlyError(err));}
 }
 
-// ======================================================
-// 5. JOIN ROOM - CORRECTED
-// ======================================================
-
-async function joinRoom() {
-
-    if(!db) {
-        setStatus("Firebase is not connected.");
-        return;
-    }
-
-    const code = document
-        .getElementById("roomInput")
-        .value
-        .trim()
-        .toUpperCase();
-
-    if(!/^[A-Z0-9]{6}$/.test(code)) {
-        setStatus("Please enter a valid 6-character Room ID.");
-        return;
-    }
-
-    cleanupConnection();
-
-    setStatus("Searching for room " + code + "...");
-
-    try {
-
-        const ref = db.ref("snakeRooms/" + code);
-
-        // First check if room exists
-        const snapshot = await ref.once("value");
-
-        if(!snapshot.exists()) {
-            throw new Error("Room not found. Check the Room ID.");
-        }
-
-        const room = snapshot.val();
-
-        if(room.status !== "waiting") {
-            throw new Error("Room is not waiting for players.");
-        }
-
-        if(room.guest && String(room.guest).trim() !== "") {
-            throw new Error("Room is already full.");
-        }
-
-        // Atomic transaction: only one guest can join.
-        const result = await ref.transaction(current => {
-
-            if(!current) return;
-
-            if(current.status !== "waiting") return;
-
-            if(current.guest && String(current.guest).trim() !== "") {
-                return;
-            }
-
-            current.guest = getPlayerName();
-            // Keep the room waiting until the host presses Start Game.
-            current.status = "waiting";
-
-            if(!current.directions) {
-                current.directions = {
-                    host: "right",
-                    guest: "left"
-                };
-            }
-
-            return current;
-
-        });
-
-        if(!result.committed) {
-            throw new Error("Room was taken by another player or is unavailable.");
-        }
-
-        roomRef = ref;
-        roomId = code;
-        role = "guest";
-
-        showRoom(code);
-
-        const joinedRoom = result.snapshot.val();
-
-        document.getElementById("player1Name").textContent = joinedRoom.host;
-        document.getElementById("player2Name").textContent = joinedRoom.guest;
-
-        setStatus("Successfully joined! Connected to " + joinedRoom.host + ".");
-
-        gameMessage("Waiting for the host to start the game.");
-
-        listenToRoom();
-
-    } catch(error) {
-        console.error("Join Room Error:", error);
-
-        setStatus(error.message);
-        gameMessage("Could not join room.");
-    }
-}
-
-// ======================================================
-// 6. LISTEN TO ROOM
-// ======================================================
-
-function listenToRoom() {
-
-    if(!roomRef) return;
-
-    roomListener = snapshot => {
-        const room = snapshot.val();
-
-        if(!room) {
-            stopTimer();
-            gameMessage("Room was deleted.");
-            setStatus("This room no longer exists.");
-            return;
-        }
-
-        document.getElementById("player1Name").textContent = room.host || "Player 1";
-        document.getElementById("player2Name").textContent = room.guest || "Waiting...";
-
-        if(room.status === "waiting") {
-            if(role === "host" && room.guest) {
-                document.getElementById("startBtn").disabled = false;
-                setStatus("Player 2 joined! Press Start Game when ready.");
-                gameMessage("Both players are ready. Host can start the match.");
-            } else if(role === "host") {
-                document.getElementById("startBtn").disabled = true;
-                setStatus("Waiting for Player 2. Room ID: " + roomId);
-                gameMessage("Share the Room ID with your friend.");
-            } else {
-                document.getElementById("startBtn").disabled = true;
-                setStatus("Joined room. Waiting for the host to start...");
-                gameMessage("You are Player 2. Waiting for Player 1.");
-            }
-        }
-
-        if(room.status === "playing") {
-            document.getElementById("startBtn").disabled = true;
-            document.getElementById("pauseBtn").disabled = role !== "host";
-            setStatus("Both players connected! Game is running.");
-            if(role === "guest") gameMessage(room.gamePaused ? "Game paused by host." : "Game started! You are Player 2.");
-            if(role === "host" && !started) gameMessage("Starting game...");
-        }
-
-        if(room.status === "finished") {
-            stopTimer();
-            document.getElementById("startBtn").disabled = true;
-            document.getElementById("pauseBtn").disabled = true;
-            gameMessage("🏆 Winner: " + (room.winner || "Draw"));
-            setStatus("Match finished!");
-        }
-
-        if(room.status === "closed") {
-            stopTimer();
-            gameMessage("Host closed this room.");
-            setStatus("Room closed.");
-        }
-
-        if(room.gamePaused && role === "guest") {
-            gameMessage("Game paused by host.");
-        } else if(room.status === "playing" && role === "guest") {
-            gameMessage("Game running! Use WASD or arrow keys to move.");
-        }
-    };
-
-    roomRef.on("value", roomListener);
-
-    if(role === "host") {
-        directionListener = snapshot => {
-            const directions = snapshot.val() || {};
-            hostDirection = directions.host || hostDirection || "right";
-            guestDirection = directions.guest || guestDirection || "left";
-        };
-        roomRef.child("directions").on("value", directionListener);
-    }
-
-    if(role === "guest") {
-        stateListener = snapshot => {
-            const state = snapshot.val();
-            if(!state) return;
-            snake1 = state.snake1 || [];
-            snake2 = state.snake2 || [];
-            food = state.food || food;
-            score1 = state.score1 || 0;
-            score2 = state.score2 || 0;
-            updateScores();
-            draw();
-        };
-        roomRef.child("state").on("value", stateListener);
-    }
-}
-
-// ======================================================
-// 7. GAME INITIALIZATION
-// ======================================================
-
-function newGameState() {
-
-    snake1 = [
-        {x:5,y:10},
-        {x:4,y:10},
-        {x:3,y:10}
-    ];
-
-    snake2 = [
-        {x:24,y:10},
-        {x:25,y:10},
-        {x:26,y:10}
-    ];
-
-    food = {x:15,y:10};
-
-    direction1 = "right";
-    direction2 = "left";
-
-    hostDirection = "right";
-    guestDirection = "left";
-
-    score1 = 0;
-    score2 = 0;
-
-    updateScores();
-    draw();
-}
-
-function randomFood() {
-
-    let p;
-    let attempts = 0;
-
-    do {
-
-        p = {
-            x: Math.floor(Math.random() * COLS),
-            y: Math.floor(Math.random() * ROWS)
-        };
-
-        attempts++;
-
-    } while(
-        (snake1.some(s => s.x === p.x && s.y === p.y) ||
-         snake2.some(s => s.x === p.x && s.y === p.y)) &&
-         attempts < 1000
-    );
-
-    return p;
-}
-
-// ======================================================
-// 8. HOST STARTS THE GAME
-// ======================================================
-
-async function startHostGame() {
-
-    if(role !== "host" || started || !roomRef) return;
-
-    try {
-        const check = await roomRef.once("value");
-        const room = check.val();
-        if(!room || !room.guest) {
-            setStatus("Wait for Player 2 to join first.");
-            return;
-        }
-
-        newGameState();
-        started = true;
-        gameRunning = true;
-        paused = false;
-        hostDirection = "right";
-        guestDirection = "left";
-
-        document.getElementById("startBtn").disabled = true;
-        document.getElementById("pauseBtn").disabled = false;
-        document.getElementById("pauseBtn").textContent = "⏸ Pause";
-
-        // Publish initial state before changing room status to playing.
-        await roomRef.update({
-            directions: { host: "right", guest: "left" },
-            gamePaused: false,
-            state: {
-                snake1: snake1,
-                snake2: snake2,
-                food: food,
-                score1: score1,
-                score2: score2,
-                updatedAt: Date.now()
-            },
-            status: "playing"
-        });
-
-        gameMessage("Game started! Player 1 vs Player 2.");
-        gameTimer = setInterval(hostGameLoop, 150);
-
-    } catch(error) {
-        console.error(error);
-        started = false;
-        gameRunning = false;
-        setStatus("Could not start game: " + error.message);
-    }
-}
-
-// ======================================================
-// 9. SNAKE MOVEMENT
-// ======================================================
-
-function moveSnake(snake, direction) {
-
-    const head = {...snake[0]};
-
-    if(direction === "up") head.y--;
-    if(direction === "down") head.y++;
-    if(direction === "left") head.x--;
-    if(direction === "right") head.x++;
-
-    return [head, ...snake.slice(0, -1)];
-}
-
-function isOpposite(a, b) {
-
-    return (
-        (a === "up" && b === "down") ||
-        (a === "down" && b === "up") ||
-        (a === "left" && b === "right") ||
-        (a === "right" && b === "left")
-    );
-}
-
-function collision(head, ownSnake, otherSnake) {
-
-    if(
-        head.x < 0 ||
-        head.x >= COLS ||
-        head.y < 0 ||
-        head.y >= ROWS
-    ) {
-        return true;
-    }
-
-    if(ownSnake.slice(1).some(s =>
-        s.x === head.x && s.y === head.y
-    )) {
-        return true;
-    }
-
-    if(otherSnake.some(s =>
-        s.x === head.x && s.y === head.y
-    )) {
-        return true;
-    }
-
-    return false;
-}
-
-// ======================================================
-// 10. HOST GAME LOOP
-// ======================================================
-
-async function hostGameLoop() {
-
-    if(!gameRunning || paused || role !== "host" || !roomRef || loopBusy) return;
-    loopBusy = true;
-
-    try {
-        let next1 = moveSnake(snake1, hostDirection);
-        let next2 = moveSnake(snake2, guestDirection);
-
-        const head1 = next1[0];
-        const head2 = next2[0];
-        const hit1 = collision(head1, next1, snake2);
-        const hit2 = collision(head2, next2, snake1);
-
-        if(hit1 || hit2) {
-            let winner = "Draw";
-            if(hit1 && !hit2) winner = "Player 2";
-            if(hit2 && !hit1) winner = "Player 1";
-            stopTimer();
-            await roomRef.update({ status: "finished", winner, finishedAt: Date.now() });
-            return;
-        }
-
-        snake1 = next1;
-        snake2 = next2;
-
-        if(snake1[0].x === food.x && snake1[0].y === food.y) {
-            snake1.push({...snake1[snake1.length - 1]});
-            score1 += 10;
-            food = randomFood();
-        } else if(snake2[0].x === food.x && snake2[0].y === food.y) {
-            snake2.push({...snake2[snake2.length - 1]});
-            score2 += 10;
-            food = randomFood();
-        }
-
-        updateScores();
-        draw();
-
-        await roomRef.child("state").set({
-            snake1, snake2, food, score1, score2, updatedAt: Date.now()
-        });
-
-    } catch(error) {
-        console.error("Game sync error:", error);
-        gameMessage("Connection problem: " + error.message);
-    } finally {
-        loopBusy = false;
-    }
-}
-
-// ======================================================
-// 11. DRAW GAME
-// ======================================================
-
-function draw() {
-
-    ctx.fillStyle = "#071020";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Grid
-    ctx.strokeStyle = "#ffffff10";
-
-    for(let x = 0; x <= canvas.width; x += CELL) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-    }
-
-    for(let y = 0; y <= canvas.height; y += CELL) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-    }
-
-    // Food
-    ctx.fillStyle = "#fb5577";
-    ctx.beginPath();
-    ctx.arc(food.x * CELL + 10, food.y * CELL + 10, 8, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Player 1 snake
-    snake1.forEach((s, i) => {
-
-        ctx.fillStyle = i === 0 ? "#b8ffe0" : "#39e89a";
-
-        ctx.fillRect(
-            s.x * CELL + 1,
-            s.y * CELL + 1,
-            CELL - 3,
-            CELL - 3
-        );
-    });
-
-    // Player 2 snake
-    snake2.forEach((s, i) => {
-
-        ctx.fillStyle = i === 0 ? "#ffc0d8" : "#ec4899";
-
-        ctx.fillRect(
-            s.x * CELL + 1,
-            s.y * CELL + 1,
-            CELL - 3,
-            CELL - 3
-        );
-    });
-
-    if(!roomRef) {
-
-        ctx.fillStyle = "white";
-        ctx.font = "bold 25px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("SNAKEX PRO", 300, 190);
-
-        ctx.font = "14px Arial";
-        ctx.fillText("Create or join a room to play", 300, 220);
-
-        ctx.textAlign = "left";
-    }
-}
-
-// ======================================================
-// 12. PLAYER CONTROLS
-// ======================================================
-
-async function sendDirection(direction) {
-
-    if(!roomRef || !role || !started || !gameRunning || paused) return;
-
-    const current = role === "host" ? hostDirection : guestDirection;
-    if(isOpposite(current, direction) || current === direction) return;
-
-    // Update immediately so rapid key presses are responsive.
-    if(role === "host") hostDirection = direction;
-    else guestDirection = direction;
-
-    try {
-        await roomRef.child("directions/" + role).set(direction);
-    } catch(error) {
-        console.error(error);
-        gameMessage("Movement sync failed: " + error.message);
-    }
-}
-
-// Both WASD and arrow keys control the snake on either player's device.
-// Only movement keys are intercepted; all other keyboard shortcuts continue to work.
-document.addEventListener("keydown", e => {
-
-    const target = e.target;
-    if(target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
-
-    const key = e.key.toLowerCase();
-    const directions = {
-        arrowup: "up", arrowdown: "down", arrowleft: "left", arrowright: "right",
-        w: "up", s: "down", a: "left", d: "right"
-    };
-    const direction = directions[key];
-    if(!direction) return;
-
-    if(!started || !gameRunning || paused) return;
-
-    if(key.startsWith("arrow")) e.preventDefault();
-    sendDirection(direction);
+// Both key layouts work on either player's own device. Only movement keys are intercepted.
+document.addEventListener('keydown',event=>{
+  const target=event.target;
+  if(target && (target.tagName==='INPUT'||target.tagName==='TEXTAREA'||target.isContentEditable))return;
+  const key=event.key.toLowerCase();
+  const map={arrowup:'up',w:'up',arrowdown:'down',s:'down',arrowleft:'left',a:'left',arrowright:'right',d:'right'};
+  const direction=map[key];if(!direction)return;
+  if(key.startsWith('arrow'))event.preventDefault();
+  if(roomRef && (role==='host'||role==='guest'))sendDirection(direction);
+});
+document.querySelectorAll('[data-direction]').forEach(button=>{
+  const act=e=>{e.preventDefault();sendDirection(button.dataset.direction);};
+  button.addEventListener('click',act);button.addEventListener('touchstart',act,{passive:false});
 });
 
-// Mobile / touch buttons
- document.querySelectorAll("[data-direction]").forEach(button => {
-    button.addEventListener("click", () => sendDirection(button.dataset.direction));
+$('createBtn').addEventListener('click',createRoom);
+$('joinBtn').addEventListener('click',joinRoom);
+$('startBtn').addEventListener('click',startGame);
+$('restartBtn').addEventListener('click',async()=>{
+  if(role!=='host'||!roomRef)return;
+  try{await roomRef.update({status:'ready',gamePaused:false,winner:null});started=false;paused=false;stopLoop();gameMessage('New match ready. Click Start Game.');setStatus('Ready for a new match.');setButtons();}
+  catch(err){setStatus('Could not reset match: '+friendlyError(err));}
+});
+$('pauseBtn').addEventListener('click',async()=>{
+  if(role!=='host'||!started||!roomRef)return;
+  try{
+    paused=!paused;await roomRef.update({gamePaused:paused});
+    $('pauseBtn').textContent=paused?'▶ Resume':'Ⅱ Pause';
+    gameMessage(paused?'Game paused.':'Game resumed.');
+    if(paused){if(loopTimer)clearTimeout(loopTimer);loopTimer=null;}else scheduleHostTick();
+  }catch(err){setStatus('Pause update failed: '+friendlyError(err));}
+});
+$('copyBtn').addEventListener('click',async()=>{
+  if(!roomId){setStatus('Create or join a room first.');return;}
+  try{await navigator.clipboard.writeText(roomId);setStatus('Room ID copied: '+roomId);}
+  catch(_){$('roomInput').select();setStatus('Select and copy this Room ID: '+roomId);}
+});
+$('leaveBtn').addEventListener('click',async()=>{
+  if(!roomRef){setStatus('You are not in a room.');return;}
+  const oldRef=roomRef,oldRole=role;stopLoop();
+  try{
+    if(oldRole==='host') await oldRef.update({status:'closed',closedAt:Date.now(),gamePaused:false});
+    else await oldRef.transaction(room=>{
+      if(!room)return;
+      if(room.guest===playerName()||room.status==='ready'||room.status==='playing'){
+        room.guest='';room.status='waiting';room.gamePaused=false;room.winner=null;
+        room.directions=room.directions||{};room.directions.guest='left';room.state=null;
+      }
+      return room;
+    });
+  }catch(err){console.error(err);setStatus('Leave room warning: '+friendlyError(err));}
+  resetConnection();$('roomCode').textContent='------';$('player1Name').textContent='Waiting…';$('player2Name').textContent='Waiting…';resetBoard();
+  setStatus('You left the room.');gameMessage('Create or join a room to play.');
 });
 
-// ======================================================
-// 13. PAUSE AND RESUME
-// ======================================================
+// Firebase initialization and clear connection errors.
+try{
+  if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+  db=firebase.database();
+  db.ref('.info/connected').on('value',snap=>setStatus(snap.val()?'Firebase connected. Create a room or join a friend.':'Connecting to Firebase…'));
+}catch(err){console.error(err);setStatus('Firebase initialization failed: '+friendlyError(err));}
 
-document.getElementById("pauseBtn").onclick = async () => {
-
-    if(role !== "host" || !started) return;
-
-    paused = !paused;
-
-    document.getElementById("pauseBtn").textContent =
-        paused ? "▶ Resume" : "⏸ Pause";
-
-    if(roomRef) {
-        try {
-            await roomRef.child("gamePaused").set(paused);
-        } catch(error) {
-            console.error(error);
-            gameMessage("Pause sync failed: " + error.message);
-        }
-    }
-
-    gameMessage(paused ? "Game paused." : "Game resumed.");
-};
-
-// ======================================================
-// 14. BUTTON EVENTS
-// ======================================================
-
-document.getElementById("createBtn").onclick = createRoom;
-
-document.getElementById("joinBtn").onclick = joinRoom;
-
-document.getElementById("startBtn").onclick = async () => {
-    if(role !== "host" || !roomRef) return;
-    await startHostGame();
-};
-
-document.getElementById("copyBtn").onclick = async () => {
-
-    if(!roomId) {
-        setStatus("Create a room first.");
-        return;
-    }
-
-    try {
-
-        await navigator.clipboard.writeText(roomId);
-        setStatus("Room ID copied: " + roomId);
-
-    } catch(error) {
-
-        setStatus("Your Room ID is: " + roomId);
-    }
-};
-
-document.getElementById("leaveBtn").onclick = async () => {
-
-    if(!roomRef) {
-        setStatus("You are not in a room.");
-        return;
-    }
-
-    const oldRef = roomRef;
-    const oldRole = role;
-
-    stopTimer();
-
-    try {
-
-        if(oldRole === "host") {
-
-            await oldRef.update({
-                status: "closed",
-                closedAt: Date.now()
-            });
-
-        } else {
-
-            await oldRef.transaction(current => {
-
-                if(!current || current.status !== "playing") return;
-
-                current.guest = "";
-                current.status = "waiting";
-
-                current.directions = {
-                    host: current.directions?.host || "right",
-                    guest: "left"
-                };
-
-                current.state = null;
-
-                return current;
-            });
-
-        }
-
-    } catch(error) {
-
-        console.error("Leave room error:", error);
-
-    }
-
-    cleanupConnection();
-
-    document.getElementById("roomCode").textContent = "------";
-
-    document.getElementById("player1Name").textContent = "Waiting...";
-    document.getElementById("player2Name").textContent = "Waiting...";
-
-    setStatus("You have left the room.");
-    gameMessage("Create or join a room to play.");
-};
-
-// ======================================================
-// 15. INITIALIZATION
-// ======================================================
-
-newGameState();
-draw();
-
+resetBoard();draw();
 </script>
-
 </body>
 </html>
