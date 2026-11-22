@@ -1,0 +1,1379 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SnakeX Pro - Ultimate Snake Game</title>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<style>
+:root {
+  --bg:#080e1c;
+  --panel:#121d32;
+  --panel2:#1b2943;
+  --text:#edf4ff;
+  --muted:#9cabc3;
+  --accent:#8b5cf6;
+  --green:#39e89a;
+  --border:#293a58;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:radial-gradient(circle at top left,#1d2850,transparent 35%),var(--bg);
+  color:var(--text);font-family:Arial,sans-serif;min-height:100vh
+}
+button,input,select{font:inherit}
+button{cursor:pointer;border:0}
+header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 5%;background:#0b1222;border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:5
+}
+.logo{font-size:25px;font-weight:900}
+.logo span{color:var(--green)}
+.coins{background:var(--panel2);padding:11px 16px;border-radius:25px}
+nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;padding:15px}
+nav button,.secondary{
+  background:var(--panel2);color:white;padding:10px 14px;
+  border-radius:9px;border:1px solid var(--border)
+}
+nav button.active{background:var(--accent)}
+.primary{
+  background:linear-gradient(120deg,#7c3aed,#4f46e5);
+  color:white;padding:12px 18px;border-radius:9px;font-weight:bold
+}
+.danger{background:#a83255;color:white;padding:10px 15px;border-radius:9px}
+main{max-width:1200px;margin:auto;padding:15px 20px 50px}
+.page{display:none}.page.active{display:block}
+.hero{text-align:center;padding:25px 10px}
+.hero h1{font-size:clamp(32px,5vw,53px);margin-bottom:10px}
+.hero h1 span{color:var(--green)}
+.hero p,.muted{color:var(--muted);line-height:1.6}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.panel,.stat,.card{
+  background:linear-gradient(145deg,var(--panel),#10192b);
+  border:1px solid var(--border);border-radius:15px;padding:17px
+}
+.stat small{color:var(--muted)}
+.stat strong{display:block;font-size:25px;margin-top:7px}
+.game-layout{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:15px}
+.game-panel{text-align:center}
+canvas{
+  width:min(100%,660px);height:auto;display:block;margin:15px auto;
+  background:#071020;border:2px solid #344765;border-radius:12px
+}
+.controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+select,input{
+  background:#0b1427;color:white;border:1px solid var(--border);
+  padding:10px;border-radius:8px;max-width:100%
+}
+label{display:block;color:var(--muted);margin:12px 0 6px}
+.side .stat{margin-bottom:10px}
+.side h3{margin:15px 0 10px}
+.side p{font-size:13px;color:var(--muted);line-height:1.7}
+.section-title{margin:22px 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px}
+.card h3{margin-bottom:8px}
+.card p{color:var(--muted);font-size:13px;line-height:1.5;margin-bottom:12px}
+.card button{margin-top:8px}
+.list{display:grid;gap:9px;margin-top:12px}
+.list-item{
+  display:flex;justify-content:space-between;gap:10px;
+  padding:12px;background:#0c1629;border:1px solid var(--border);
+  border-radius:10px
+}
+.progress{height:8px;background:#27344d;border-radius:20px;overflow:hidden;margin:10px 0}
+.progress span{height:100%;display:block;background:var(--green)}
+.avatar{font-size:48px;margin-bottom:12px}
+.mobile-controls{
+  display:none;grid-template-columns:repeat(3,50px);gap:5px;
+  justify-content:center;margin:15px
+}
+.mobile-controls button{height:45px;background:#263955;color:white;border-radius:9px;font-size:20px}
+#toast{
+  display:none;position:fixed;bottom:20px;left:50%;
+  transform:translateX(-50%);background:#293c5d;padding:13px 20px;
+  border-radius:10px;z-index:10
+}
+footer{text-align:center;padding:25px;color:var(--muted)}
+@media(max-width:800px){
+  .game-layout{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:480px){
+  header{padding:13px 4%}.logo{font-size:20px}
+  main{padding:10px}.mobile-controls{display:grid}
+  nav button{font-size:12px;padding:9px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">🐍 Snake<span>X</span> Pro</div>
+  <div class="coins">🪙 <b id="coinHeader">0</b></div>
+</header>
+
+<nav>
+  <button class="active" data-page="play">🎮 Play</button>
+  <button data-page="profile">👤 Profile</button>
+  <button data-page="missions">🎯 Missions</button>
+  <button data-page="shop">🛍️ Shop</button>
+  <button data-page="rankings">🏆 Rankings</button>
+  <button data-page="analytics">📊 Analytics</button>
+</nav>
+
+<main>
+
+<!-- PLAY PAGE -->
+<section class="page active" id="play">
+  <div class="hero">
+    <h1>Welcome to <span>SnakeX Pro</span></h1>
+    <p>Eat, grow, survive and become the ultimate snake champion!</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><small>🏆 Best Score</small><strong id="best">0</strong></div>
+    <div class="stat"><small>⭐ Level</small><strong id="level">1</strong></div>
+    <div class="stat"><small>⚡ XP</small><strong id="xp">0</strong></div>
+    <div class="stat"><small>🎮 Games</small><strong id="games">0</strong></div>
+  </div>
+
+  <div class="game-layout">
+    <div class="panel game-panel">
+
+      <div class="controls">
+        <select id="mode">
+          <option value="classic">Classic</option>
+          <option value="walls">Wall Challenge</option>
+          <option value="time">Time Attack</option>
+          <option value="survival">Survival</option>
+          <option value="maze">Maze</option>
+          <option value="boss">Boss Battle</option>
+          <option value="local">Local Multiplayer</option>
+          <option value="online">Online Multiplayer</option>
+        </select>
+
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Hard</option>
+          <option value="expert">Expert</option>
+        </select>
+      </div>
+
+      <canvas id="game" width="600" height="420"></canvas>
+
+      <div class="controls">
+        <button class="primary" id="start">▶ Start</button>
+        <button class="secondary" id="pause">⏸ Pause</button>
+        <button class="secondary" id="restart">↻ Restart</button>
+      </div>
+
+      <div class="mobile-controls">
+        <span></span><button data-dir="up">⬆</button><span></span>
+        <button data-dir="left">⬅</button>
+        <button data-dir="down">⬇</button>
+        <button data-dir="right">➡</button>
+      </div>
+
+      <p class="muted" style="margin-top:12px">
+        Player 1: Arrow keys. Player 2: WASD.
+        Space: Pause.
+      </p>
+
+      <!-- ONLINE MULTIPLAYER -->
+      <div id="onlinePanel" class="card" style="display:none;text-align:left;margin-top:18px">
+        <h3>🌐 Online Multiplayer</h3>
+        <p>Create a room or join your friend's room.</p>
+        <button class="primary" id="createRoom">Create Room</button>
+        <label>Room Code</label>
+        <input id="roomCode" placeholder="Enter room code">
+        <button class="secondary" id="joinRoom">Join Room</button>
+        <p id="onlineStatus" style="margin-top:12px">Waiting for connection...</p>
+      </div>
+    </div>
+
+    <aside class="panel side">
+      <h3>🎮 Game Information</h3>
+      <div class="stat"><small>Score</small><strong id="score">0</strong></div>
+      <div class="stat"><small>Game Coins</small><strong id="gameCoins">0</strong></div>
+      <div class="stat"><small>Power-up</small><strong id="power">None</strong></div>
+
+      <h3>⌨️ Controls</h3>
+      <p>Arrow keys: Player 1<br>WASD: Player 2 in local battle<br>Space: Pause</p>
+
+      <h3>✨ Tips</h3>
+      <p>Collect food, avoid obstacles and use power-ups to improve your score.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- PROFILE -->
+<section class="page" id="profile">
+  <h2 class="section-title">👤 Player Profile</h2>
+  <div class="panel">
+    <div class="avatar" id="avatarDisplay">🐍</div>
+    <label>Player Name</label>
+    <input id="playerName" maxlength="20" placeholder="Your name">
+    <label>Choose Avatar</label>
+    <select id="avatar">
+      <option>🐍</option><option>😎</option><option>🐲</option>
+      <option>👾</option><option>🦊</option><option>🐸</option>
+    </select>
+    <br><br>
+    <button class="primary" id="saveProfile">Save Profile</button>
+    <h3 class="section-title" id="rankText">Beginner Snake</h3>
+    <div class="progress"><span id="xpBar"></span></div>
+    <p class="muted" id="xpText"></p>
+    <br>
+    <button class="secondary" id="share">📤 Share Score</button>
+  </div>
+</section>
+
+<!-- MISSIONS -->
+<section class="page" id="missions">
+  <h2 class="section-title">🎯 Daily Missions</h2>
+  <div class="grid" id="missionList"></div>
+  <h2 class="section-title">🏅 Achievements</h2>
+  <div class="grid" id="achievementList"></div>
+</section>
+
+<!-- SHOP -->
+<section class="page" id="shop">
+  <h2 class="section-title">🛍️ Snake Skin Shop</h2>
+  <div class="grid" id="shopList"></div>
+  <h2 class="section-title">🌈 Themes</h2>
+  <div class="grid" id="themeList"></div>
+</section>
+
+<!-- RANKINGS -->
+<section class="page" id="rankings">
+  <h2 class="section-title">🏆 Local Leaderboard</h2>
+  <p class="muted">These scores are saved on this browser. They are not a global online leaderboard.</p>
+  <div class="panel list" id="leaderboard"></div>
+</section>
+
+<!-- ANALYTICS -->
+<section class="page" id="analytics">
+  <h2 class="section-title">📊 Game Analytics</h2>
+  <div class="stats">
+    <div class="stat"><small>Total Games</small><strong id="aGames">0</strong></div>
+    <div class="stat"><small>Best Score</small><strong id="aBest">0</strong></div>
+    <div class="stat"><small>Total Food</small><strong id="aFood">0</strong></div>
+    <div class="stat"><small>Total XP</small><strong id="aXP">0</strong></div>
+  </div>
+  <div class="panel">
+    <h3>Recent Games</h3>
+    <div class="list" id="history"></div>
+    <br>
+    <button class="secondary" id="download">⬇ Download CSV</button>
+  </div>
+</section>
+
+</main>
+
+<footer>SnakeX Pro © 2026 | Built with HTML, CSS and JavaScript</footer>
+<div id="toast"></div>
+
+<script>
+// ============================================
+// 1. FIREBASE CONFIGURATION
+// ============================================
+
+// Values from your Firebase Web App screenshot.
+// The databaseURL below is the standard default URL.
+// Confirm it against the URL shown in your Realtime Database console.
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDIHqzPVpb3Fs4o-jBsLWF7vdjS8R0e_nk",
+  authDomain: "snakex-pro.firebaseapp.com",
+  databaseURL: "https://snakex-pro-default-rtdb.firebaseio.com",
+  projectId: "snakex-pro",
+  storageBucket: "snakex-pro.firebasestorage.app",
+  messagingSenderId: "353460939475",
+  appId: "1:353460939475:web:3e33a4a7a8149ba50d2c226"
+};
+
+let db = null;
+let firebaseReady = false;
+
+try {
+  if (window.firebase) {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    firebaseReady = true;
+    console.log("Firebase initialized");
+  }
+} catch (error) {
+  console.error("Firebase initialization error:", error);
+}
+
+// ============================================
+// 2. PLAYER DATA
+// ============================================
+
+const defaultData = {
+  name:"Player",
+  avatar:"🐍",
+  coins:0,
+  xp:0,
+  best:0,
+  games:0,
+  food:0,
+  skin:"Classic",
+  unlocked:["Classic"],
+  history:[],
+  missions:{games:0,food:0,score:0,claimed:[]},
+  achievements:[]
+};
+
+let data;
+
+try {
+  const saved = JSON.parse(localStorage.getItem("snakeXData") || "{}");
+  data = {...defaultData,...saved};
+  data.missions = {...defaultData.missions,...(saved.missions || {})};
+  if (!Array.isArray(data.history)) data.history = [];
+  if (!Array.isArray(data.unlocked)) data.unlocked = ["Classic"];
+  if (!Array.isArray(data.achievements)) data.achievements = [];
+} catch {
+  data = {...defaultData};
+}
+
+function save() {
+  localStorage.setItem("snakeXData",JSON.stringify(data));
+  updateDashboard();
+}
+
+function toast(message) {
+  const el=document.getElementById("toast");
+  el.textContent=message;
+  el.style.display="block";
+  clearTimeout(toast.timer);
+  toast.timer=setTimeout(()=>el.style.display="none",2500);
+}
+
+function level() {
+  return Math.floor(data.xp/100)+1;
+}
+
+function rank() {
+  if(level()>=20)return "Legendary Snake";
+  if(level()>=10)return "Master Snake";
+  if(level()>=5)return "Pro Snake";
+  return "Beginner Snake";
+}
+
+function updateDashboard() {
+  const values = {
+    coinHeader:data.coins,
+    best:data.best,
+    level:level(),
+    xp:data.xp,
+    games:data.games,
+    aGames:data.games,
+    aBest:data.best,
+    aFood:data.food,
+    aXP:data.xp
+  };
+
+  Object.entries(values).forEach(([id,value])=>{
+    document.getElementById(id).textContent=value;
+  });
+
+  document.getElementById("playerName").value=data.name;
+  document.getElementById("avatar").value=data.avatar;
+  document.getElementById("avatarDisplay").textContent=data.avatar;
+  document.getElementById("rankText").textContent=rank();
+  document.getElementById("xpBar").style.width=(data.xp%100)+"%";
+  document.getElementById("xpText").textContent=(100-data.xp%100)+" XP until next level";
+
+  renderHistory();
+  renderLeaderboard();
+  renderMissions();
+  renderAchievements();
+}
+
+// ============================================
+// 3. NAVIGATION
+// ============================================
+
+document.querySelectorAll("nav button").forEach(button=>{
+  button.onclick=()=>{
+    document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+    button.classList.add("active");
+    document.getElementById(button.dataset.page).classList.add("active");
+  };
+});
+
+// ============================================
+// 4. GAME ENGINE
+// ============================================
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+const CELL=20,COLS=30,ROWS=21;
+
+let snake=[],p2=[],food={},bonus=null;
+let obstacles=[],direction="right",nextDirection="right";
+let running=false,paused=false,gameOver=false;
+let mode="classic",score=0,gameCoins=0;
+let timer=null,tick=150,timeLeft=60;
+let power="None",shield=false;
+let doubleScoreUntil=0;
+let boss=null;
+let replayFrames=[],lastReplay=[];
+let theme="Neon";
+let roomId=null,roomRef=null,onlineRole=null;
+let roomListener=null,onlineTimer=null;
+let sendingDirection=false;
+
+const skins={
+  Classic:"#39e89a",Ocean:"#38bdf8",Fire:"#fb7185",
+  Gold:"#facc15",Purple:"#c084fc",Ice:"#a5f3fc",
+  Toxic:"#a3e635",Rose:"#fb7185",Sunset:"#fb923c",
+  Shadow:"#a1a1aa",Cyber:"#22d3ee",Rainbow:"rainbow"
+};
+
+const prices={
+  Classic:0,Ocean:40,Fire:60,Gold:100,Purple:80,
+  Ice:90,Toxic:100,Rose:120,Sunset:130,
+  Shadow:150,Cyber:180,Rainbow:250
+};
+
+const themes={
+  Neon:["#071020","#39e89a"],
+  Ocean:["#071827","#38bdf8"],
+  Sunset:["#24111d","#fb923c"],
+  Purple:["#160e2c","#c084fc"],
+  Forest:["#0c1c14","#a3e635"]
+};
+
+function randomCell() {
+  return {
+    x:Math.floor(Math.random()*COLS),
+    y:Math.floor(Math.random()*ROWS)
+  };
+}
+
+function occupied(p) {
+  return snake.some(s=>s.x===p.x&&s.y===p.y) ||
+    p2.some(s=>s.x===p.x&&s.y===p.y) ||
+    obstacles.some(s=>s.x===p.x&&s.y===p.y);
+}
+
+function placeFood() {
+  let p=randomCell(),attempts=0;
+  while(occupied(p)&&attempts++<1000)p=randomCell();
+  food=p;
+}
+
+function startGame() {
+  mode=document.getElementById("mode").value;
+
+  if(mode==="online") {
+    showOnlinePanel();
+    toast("Create or join a room first.");
+    return;
+  }
+
+  if(roomRef)leaveRoom();
+
+  clearInterval(timer);
+
+  snake=[{x:7,y:10},{x:6,y:10},{x:5,y:10}];
+  p2=mode==="local"
+    ? [{x:22,y:10},{x:23,y:10},{x:24,y:10}]
+    : [];
+
+  p2.dir="left";
+  direction="right";
+  nextDirection="right";
+
+  score=0;
+  gameCoins=0;
+  power="None";
+  shield=false;
+  timeLeft=60;
+  boss=mode==="boss"?{x:23,y:9,hp:5}:null;
+  obstacles=[];
+  bonus=null;
+  replayFrames=[];
+
+  if(mode==="walls"||mode==="maze") {
+    const count=mode==="maze"?22:12;
+    for(let i=0;i<count;i++) {
+      const p=randomCell();
+      if(!occupied(p))obstacles.push(p);
+    }
+  }
+
+  placeFood();
+
+  tick={
+    easy:210,normal:150,hard:105,expert:75
+  }[document.getElementById("difficulty").value];
+
+  running=true;
+  paused=false;
+  gameOver=false;
+
+  document.getElementById("score").textContent=score;
+  document.getElementById("gameCoins").textContent=gameCoins;
+  document.getElementById("power").textContent=power;
+  document.getElementById("pause").textContent="⏸ Pause";
+
+  document.getElementById("onlinePanel").style.display="none";
+
+  timer=setInterval(gameLoop,tick);
+  draw();
+  toast("Game started!");
+}
+
+function move(list,dir) {
+  const head={...list[0]};
+
+  if(dir==="up")head.y--;
+  if(dir==="down")head.y++;
+  if(dir==="left")head.x--;
+  if(dir==="right")head.x++;
+
+  return [head,...list.slice(0,-1)];
+}
+
+function changeDirection(d,player=1) {
+  const current=player===1?direction:(p2.dir||"left");
+  const opposite={up:"down",down:"up",left:"right",right:"left"};
+
+  if(opposite[current]===d)return;
+
+  if(mode==="online") {
+    sendOnlineDirection(d);
+    return;
+  }
+
+  if(player===1)nextDirection=d;
+  else p2.dir=d;
+}
+
+function gameLoop() {
+  if(!running||paused)return;
+
+  if(mode==="time") {
+    timeLeft--;
+    if(timeLeft<=0) {
+      finishGame("Time Attack finished!");
+      return;
+    }
+  }
+
+  direction=nextDirection;
+  snake=move(snake,direction);
+
+  if(mode==="local")p2=move(p2,p2.dir||"left");
+
+  const h=snake[0];
+
+  const outside=h.x<0||h.x>=COLS||h.y<0||h.y>=ROWS;
+  const selfHit=snake.slice(1).some(s=>s.x===h.x&&s.y===h.y);
+  const wallHit=obstacles.some(s=>s.x===h.x&&s.y===h.y);
+
+  if((outside||selfHit||wallHit)&&!shield) {
+    finishGame("Player 1 crashed!");
+    return;
+  }
+
+  if(outside&&shield) {
+    h.x=(h.x+COLS)%COLS;
+    h.y=(h.y+ROWS)%ROWS;
+    shield=false;
+  }
+
+  if(mode==="local") {
+    const h2=p2[0];
+    if(h2.x<0||h2.x>=COLS||h2.y<0||h2.y>=ROWS||
+       p2.slice(1).some(s=>s.x===h2.x&&s.y===h2.y)||
+       snake.some(s=>s.x===h2.x&&s.y===h2.y)) {
+      finishGame("Player 2 crashed! Player 1 wins!");
+      return;
+    }
+  }
+
+  if(h.x===food.x&&h.y===food.y) {
+    snake.push({...snake[snake.length-1]});
+    const points=Date.now()<doubleScoreUntil?20:10;
+    score+=points;
+    gameCoins+=5;
+    data.food++;
+    placeFood();
+
+    if(Math.random()<0.25)spawnBonus();
+
+    updateScore();
+  }
+
+  if(bonus&&h.x===bonus.x&&h.y===bonus.y) {
+    applyPower(bonus.type);
+    bonus=null;
+  }
+
+  if(mode==="boss"&&boss&&score>0&&score%50===0) {
+    boss.hp--;
+    if(boss.hp<=0) {
+      boss=null;
+      toast("🏆 Boss defeated!");
+    }
+  }
+
+  replayFrames.push({
+    snake:snake.map(s=>({...s})),
+    food:{...food},
+    score
+  });
+
+  if(replayFrames.length>400)replayFrames.shift();
+
+  draw();
+}
+
+function spawnBonus() {
+  const types=["Shield","Magnet","Speed Boost","Double Score"];
+  let p=randomCell();
+  while(occupied(p))p=randomCell();
+  bonus={...p,type:types[Math.floor(Math.random()*types.length)]};
+}
+
+function applyPower(type) {
+  power=type;
+
+  if(type==="Shield")shield=true;
+
+  if(type==="Magnet") {
+    score+=10;
+    gameCoins+=5;
+    placeFood();
+  }
+
+  if(type==="Double Score")doubleScoreUntil=Date.now()+10000;
+
+  if(type==="Speed Boost") {
+    clearInterval(timer);
+    timer=setInterval(gameLoop,Math.max(45,tick*.65));
+    setTimeout(()=>{
+      if(running) {
+        clearInterval(timer);
+        timer=setInterval(gameLoop,tick);
+      }
+    },5000);
+  }
+
+  document.getElementById("power").textContent=type;
+  toast("Power-up: "+type);
+  updateScore();
+}
+
+function updateScore() {
+  document.getElementById("score").textContent=score;
+  document.getElementById("gameCoins").textContent=gameCoins;
+}
+
+function finishGame(reason) {
+  clearInterval(timer);
+  running=false;
+  gameOver=true;
+  lastReplay=replayFrames.slice();
+
+  data.games++;
+  data.best=Math.max(data.best,score);
+  data.xp+=Math.max(5,score);
+  data.coins+=gameCoins;
+
+  data.missions.games++;
+  data.missions.food+=Math.floor(score/10);
+  data.missions.score=Math.max(data.missions.score,score);
+
+  data.history.unshift({
+    score,mode,date:new Date().toLocaleString(),reason
+  });
+
+  data.history=data.history.slice(0,30);
+
+  checkAchievements();
+  save();
+  draw();
+
+  toast(reason+" Score: "+score);
+}
+
+function draw() {
+  const colors=themes[theme]||themes.Neon;
+
+  ctx.fillStyle=colors[0];
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.strokeStyle="#ffffff0b";
+
+  for(let x=0;x<=canvas.width;x+=CELL) {
+    ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();
+  }
+
+  for(let y=0;y<=canvas.height;y+=CELL) {
+    ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();
+  }
+
+  obstacles.forEach(o=>{
+    ctx.fillStyle="#64748b";
+    ctx.fillRect(o.x*CELL,o.y*CELL,CELL-2,CELL-2);
+  });
+
+  ctx.fillStyle="#fb526b";
+  ctx.beginPath();
+  ctx.arc(food.x*CELL+10,food.y*CELL+10,8,0,Math.PI*2);
+  ctx.fill();
+
+  if(bonus) {
+    ctx.fillStyle="#facc15";
+    ctx.fillRect(bonus.x*CELL+3,bonus.y*CELL+3,14,14);
+  }
+
+  snake.forEach((s,i)=>{
+    ctx.fillStyle=i===0?colors[1]:skins[data.skin];
+
+    if(data.skin==="Rainbow"&&i>0)
+      ctx.fillStyle=`hsl(${i*20},90%,60%)`;
+
+    ctx.fillRect(s.x*CELL+1,s.y*CELL+1,CELL-3,CELL-3);
+  });
+
+  p2.forEach((s,i)=>{
+    ctx.fillStyle=i===0?"#ff5da2":"#be4d89";
+    ctx.fillRect(s.x*CELL+1,s.y*CELL+1,CELL-3,CELL-3);
+  });
+
+  if(boss) {
+    ctx.fillStyle="#a855f7";
+    ctx.fillRect(boss.x*CELL,boss.y*CELL,40,40);
+    ctx.fillStyle="white";
+    ctx.font="12px Arial";
+    ctx.fillText("BOSS HP "+boss.hp,boss.x*CELL,boss.y*CELL-5);
+  }
+
+  if(!running) {
+    ctx.fillStyle="white";
+    ctx.font="bold 25px Arial";
+    ctx.textAlign="center";
+    ctx.fillText(gameOver?"GAME OVER":"SNAKEX PRO",300,200);
+    ctx.font="14px Arial";
+    ctx.fillText(gameOver?"Press Start to play again":"Press Start to begin",300,230);
+    ctx.textAlign="left";
+  }
+}
+
+function pauseGame() {
+  if(!running)return;
+  paused=!paused;
+  document.getElementById("pause").textContent=paused?"▶ Resume":"⏸ Pause";
+}
+
+// ============================================
+// 5. GAME CONTROLS
+// ============================================
+
+document.addEventListener("keydown",e=>{
+  const keys={
+    ArrowUp:"up",ArrowDown:"down",
+    ArrowLeft:"left",ArrowRight:"right",
+    w:"up",s:"down",a:"left",d:"right",
+    W:"up",S:"down",A:"left",D:"right"
+  };
+
+  if(e.code==="Space") {
+    e.preventDefault();
+    pauseGame();
+    return;
+  }
+
+  if(e.key==="Enter"&&!running) {
+    startGame();
+    return;
+  }
+
+  if(keys[e.key]) {
+    e.preventDefault();
+
+    if(mode==="local"&&"wasd".includes(e.key.toLowerCase())) {
+      changeDirection(keys[e.key],2);
+    } else {
+      changeDirection(keys[e.key],1);
+    }
+  }
+});
+
+document.querySelectorAll("[data-dir]").forEach(button=>{
+  button.onclick=()=>changeDirection(button.dataset.dir);
+});
+
+document.getElementById("start").onclick=startGame;
+document.getElementById("restart").onclick=startGame;
+document.getElementById("pause").onclick=pauseGame;
+
+document.getElementById("mode").onchange=e=>{
+  document.getElementById("onlinePanel").style.display=
+    e.target.value==="online"?"block":"none";
+};
+
+// ============================================
+// 6. PROFILE
+// ============================================
+
+document.getElementById("saveProfile").onclick=()=>{
+  data.name=document.getElementById("playerName").value.trim()||"Player";
+  data.avatar=document.getElementById("avatar").value;
+  save();
+  toast("Profile saved!");
+};
+
+document.getElementById("avatar").onchange=e=>{
+  document.getElementById("avatarDisplay").textContent=e.target.value;
+};
+
+document.getElementById("share").onclick=async()=>{
+  const text=`I scored ${data.best} points in SnakeX Pro! 🐍`;
+
+  if(navigator.share) {
+    try {
+      await navigator.share({title:"SnakeX Pro",text});
+    } catch(e) {}
+  } else if(navigator.clipboard) {
+    await navigator.clipboard.writeText(text);
+    toast("Score copied!");
+  } else {
+    toast(text);
+  }
+};
+
+// ============================================
+// 7. MISSIONS
+// ============================================
+
+const missionDefs=[
+  {id:"games",title:"Play 3 Games",target:3,reward:30},
+  {id:"food",title:"Collect 10 Food",target:10,reward:40},
+  {id:"score",title:"Score 50 Points",target:50,reward:50}
+];
+
+function renderMissions() {
+  const el=document.getElementById("missionList");
+  el.innerHTML="";
+
+  missionDefs.forEach(m=>{
+    const value=data.missions[m.id];
+    const done=value>=m.target;
+    const claimed=data.missions.claimed.includes(m.id);
+
+    const card=document.createElement("div");
+    card.className="card";
+
+    const title=document.createElement("h3");
+    title.textContent=m.title;
+
+    const description=document.createElement("p");
+    description.textContent=`Progress: ${Math.min(value,m.target)} / ${m.target}`;
+
+    const progress=document.createElement("div");
+    progress.className="progress";
+
+    const bar=document.createElement("span");
+    bar.style.width=Math.min(100,value/m.target*100)+"%";
+    progress.appendChild(bar);
+
+    const button=document.createElement("button");
+    button.className=done&&!claimed?"primary":"secondary";
+    button.textContent=claimed?"Claimed":done?"Claim Reward":"In Progress";
+    button.disabled=!done||claimed;
+
+    button.onclick=()=>{
+      if(done&&!claimed) {
+        data.coins+=m.reward;
+        data.missions.claimed.push(m.id);
+        save();
+        renderMissions();
+        toast("Mission reward claimed!");
+      }
+    };
+
+    card.append(title,description,progress,button);
+    el.appendChild(card);
+  });
+}
+
+// ============================================
+// 8. ACHIEVEMENTS
+// ============================================
+
+const achievementDefs=[
+  ["First Game","Complete your first game",()=>data.games>=1],
+  ["Food Lover","Collect 20 food",()=>data.food>=20],
+  ["High Scorer","Score 100 points",()=>data.best>=100],
+  ["Level 5","Reach level 5",()=>level()>=5],
+  ["Legend","Reach level 10",()=>level()>=10]
+];
+
+function checkAchievements() {
+  achievementDefs.forEach(a=>{
+    if(a[2]()&&!data.achievements.includes(a[0])) {
+      data.achievements.push(a[0]);
+      data.coins+=25;
+      toast("Achievement unlocked: "+a[0]);
+    }
+  });
+}
+
+function renderAchievements() {
+  const el=document.getElementById("achievementList");
+  el.innerHTML="";
+
+  achievementDefs.forEach(a=>{
+    const unlocked=data.achievements.includes(a[0]);
+    const card=document.createElement("div");
+    card.className="card";
+
+    const title=document.createElement("h3");
+    title.textContent=(unlocked?"🏅 ":"🔒 ")+a[0];
+
+    const description=document.createElement("p");
+    description.textContent=a[1];
+
+    const status=document.createElement("b");
+    status.textContent=unlocked?"Unlocked":"Locked";
+
+    card.append(title,description,status);
+    el.appendChild(card);
+  });
+}
+
+// ============================================
+// 9. SHOP AND THEMES
+// ============================================
+
+function renderShop() {
+  const shop=document.getElementById("shopList");
+  shop.innerHTML="";
+
+  Object.entries(prices).forEach(([name,price])=>{
+    const unlocked=data.unlocked.includes(name);
+    const selected=data.skin===name;
+
+    const card=document.createElement("div");
+    card.className="card";
+
+    const title=document.createElement("h3");
+    title.textContent=name+" Snake";
+
+    const swatch=document.createElement("div");
+    swatch.style.height="25px";
+    swatch.style.borderRadius="8px";
+    swatch.style.margin="10px 0";
+    swatch.style.background=skins[name]==="rainbow"
+      ?"linear-gradient(90deg,red,orange,yellow,green,blue,purple)"
+      :skins[name];
+
+    const info=document.createElement("p");
+    info.textContent=selected?"Selected":unlocked?"Unlocked":price+" coins";
+
+    const button=document.createElement("button");
+    button.className="primary";
+    button.textContent=selected?"Selected":unlocked?"Use Skin":"Unlock";
+
+    button.onclick=()=>{
+      if(unlocked) {
+        data.skin=name;
+      } else if(data.coins>=price) {
+        data.coins-=price;
+        data.unlocked.push(name);
+        data.skin=name;
+      } else {
+        toast("Not enough coins!");
+        return;
+      }
+
+      save();
+      renderShop();
+      toast(name+" selected!");
+    };
+
+    card.append(title,swatch,info,button);
+    shop.appendChild(card);
+  });
+
+  const themeEl=document.getElementById("themeList");
+  themeEl.innerHTML="";
+
+  Object.entries(themes).forEach(([name,colors])=>{
+    const card=document.createElement("div");
+    card.className="card";
+
+    const title=document.createElement("h3");
+    title.textContent=name;
+
+    const swatch=document.createElement("div");
+    swatch.style.height="25px";
+    swatch.style.borderRadius="8px";
+    swatch.style.background=colors[0];
+
+    const button=document.createElement("button");
+    button.className="secondary";
+    button.textContent=theme===name?"Selected":"Apply Theme";
+
+    button.onclick=()=>{
+      theme=name;
+      draw();
+      renderShop();
+    };
+
+    card.append(title,swatch,button);
+    themeEl.appendChild(card);
+  });
+}
+
+// ============================================
+// 10. LEADERBOARD AND HISTORY
+// ============================================
+
+function renderLeaderboard() {
+  const el=document.getElementById("leaderboard");
+  el.innerHTML="";
+
+  const entries=data.history.map(h=>({
+    name:data.name,score:h.score
+  }));
+
+  entries.push({name:data.name,score:data.best});
+  entries.sort((a,b)=>b.score-a.score);
+
+  entries.slice(0,10).forEach((entry,index)=>{
+    const row=document.createElement("div");
+    row.className="list-item";
+    row.textContent=`${index+1}. ${entry.name} — ${entry.score} points`;
+    el.appendChild(row);
+  });
+}
+
+function renderHistory() {
+  const el=document.getElementById("history");
+  if(!el)return;
+  el.innerHTML="";
+
+  if(!data.history.length) {
+    el.textContent="No games played yet.";
+    return;
+  }
+
+  data.history.slice(0,10).forEach(h=>{
+    const row=document.createElement("div");
+    row.className="list-item";
+    row.textContent=`${h.mode} | ${h.date} | ${h.score} points`;
+    el.appendChild(row);
+  });
+}
+
+document.getElementById("download").onclick=()=>{
+  const rows=[
+    ["Date","Mode","Score","Result"],
+    ...data.history.map(h=>[h.date,h.mode,h.score,h.reason])
+  ];
+
+  const csv=rows.map(r=>
+    r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(",")
+  ).join("\n");
+
+  const a=document.createElement("a");
+  const url=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.href=url;
+  a.download="SnakeX-History.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
+// ============================================
+// 11. FIREBASE ONLINE MULTIPLAYER
+// ============================================
+
+function showOnlinePanel() {
+  document.getElementById("onlinePanel").style.display="block";
+}
+
+function makeRoomCode() {
+  return Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+function leaveRoom() {
+  if(roomRef&&roomListener) {
+    roomRef.off("value",roomListener);
+  }
+
+  clearInterval(onlineTimer);
+  roomRef=null;
+  roomListener=null;
+  roomId=null;
+  onlineRole=null;
+  sendingDirection=false;
+}
+
+async function createRoom() {
+  if(!firebaseReady||!db) {
+    toast("Firebase is not configured.");
+    return;
+  }
+
+  try {
+    leaveRoom();
+
+    roomId=makeRoomCode();
+    onlineRole="host";
+    roomRef=db.ref("snakeRooms/"+roomId);
+
+    await roomRef.set({
+      status:"waiting",
+      host:data.name,
+      guest:"",
+      createdAt:Date.now(),
+      snapshot:null,
+      directions:{host:"right",guest:"left"}
+    });
+
+    document.getElementById("roomCode").value=roomId;
+    document.getElementById("onlineStatus").textContent=
+      "Room created! Share code: "+roomId;
+
+    listenToRoom();
+    toast("Room created successfully!");
+
+  } catch(error) {
+    console.error(error);
+    toast("Could not create room: "+error.message);
+  }
+}
+
+async function joinRoom() {
+  if(!firebaseReady||!db) {
+    toast("Firebase is not configured.");
+    return;
+  }
+
+  const code=document.getElementById("roomCode").value.trim().toUpperCase();
+
+  if(!code) {
+    toast("Enter a room code.");
+    return;
+  }
+
+  try {
+    leaveRoom();
+
+    const ref=db.ref("snakeRooms/"+code);
+    const result=await ref.transaction(room=>{
+      if(!room||room.guest||room.status!=="waiting")return;
+      room.guest=data.name;
+      room.status="playing";
+      return room;
+    });
+
+    if(!result.committed) {
+      toast("Room unavailable or already full.");
+      return;
+    }
+
+    roomId=code;
+    roomRef=ref;
+    onlineRole="guest";
+
+    document.getElementById("onlineStatus").textContent=
+      "Joined room "+code+". Waiting for host to start.";
+
+    listenToRoom();
+    toast("Successfully joined room!");
+
+  } catch(error) {
+    console.error(error);
+    toast("Join error: "+error.message);
+  }
+}
+
+function listenToRoom() {
+  if(!roomRef)return;
+
+  roomListener=snapshot=>{
+    const room=snapshot.val();
+
+    if(!room)return;
+
+    if(room.status==="finished") {
+      clearInterval(onlineTimer);
+      running=false;
+      draw();
+      toast("Online game finished!");
+      return;
+    }
+
+    if(room.snapshot&&onlineRole==="guest") {
+      const s=room.snapshot;
+
+      snake=s.snake||snake;
+      p2=s.p2||p2;
+      food=s.food||food;
+      score=s.score||0;
+
+      document.getElementById("score").textContent=score;
+      draw();
+    }
+
+    if(room.status==="playing"&&onlineRole==="host"&&!running) {
+      startOnlineHost();
+    }
+
+    document.getElementById("onlineStatus").textContent=
+      room.status==="waiting"
+      ?"Waiting for another player..."
+      :room.host+" vs "+(room.guest||"Player 2");
+  };
+
+  roomRef.on("value",roomListener);
+}
+
+async function sendOnlineDirection(d) {
+  if(!roomRef||sendingDirection)return;
+
+  sendingDirection=true;
+
+  try {
+    await roomRef.child("directions/"+onlineRole).set(d);
+  } catch(error) {
+    console.error(error);
+  }
+
+  sendingDirection=false;
+}
+
+function startOnlineHost() {
+  if(!roomRef||onlineRole!=="host"||running)return;
+
+  mode="online";
+
+  snake=[{x:7,y:10},{x:6,y:10},{x:5,y:10}];
+  p2=[{x:22,y:10},{x:23,y:10},{x:24,y:10}];
+  p2.dir="left";
+
+  direction="right";
+  nextDirection="right";
+
+  score=0;
+  gameCoins=0;
+  obstacles=[];
+  placeFood();
+
+  running=true;
+  paused=false;
+  gameOver=false;
+
+  clearInterval(onlineTimer);
+
+  // Read both players' directions and run the shared game on the host.
+  onlineTimer=setInterval(async()=>{
+    if(!running||paused||!roomRef)return;
+
+    try {
+      const directionSnap=await roomRef.child("directions").get();
+      const directions=directionSnap.val()||{};
+
+      nextDirection=directions.host||nextDirection;
+      p2.dir=directions.guest||p2.dir||"left";
+    } catch(error) {
+      console.error(error);
+    }
+
+    direction=nextDirection;
+    snake=move(snake,direction);
+    p2=move(p2,p2.dir||"left");
+
+    const allHeads=[snake[0],p2[0]];
+
+    const crashed=allHeads.some(h=>
+      h.x<0||h.x>=COLS||h.y<0||h.y>=ROWS
+    );
+
+    const collided=snake.slice(1).some(s=>
+      s.x===snake[0].x&&s.y===snake[0].y
+    )||p2.slice(1).some(s=>
+      s.x===p2[0].x&&s.y===p2[0].y
+    );
+
+    if(crashed||collided) {
+      running=false;
+      clearInterval(onlineTimer);
+
+      await roomRef.update({status:"finished"});
+      toast("Online battle finished!");
+      draw();
+      return;
+    }
+
+    if(snake[0].x===food.x&&snake[0].y===food.y) {
+      snake.push({...snake[snake.length-1]});
+      score+=10;
+      gameCoins+=5;
+      placeFood();
+      updateScore();
+    }
+
+    if(p2[0].x===food.x&&p2[0].y===food.y) {
+      p2.push({...p2[p2.length-1]});
+      score+=10;
+      gameCoins+=5;
+      placeFood();
+      updateScore();
+    }
+
+    draw();
+
+    // Send the current state to the other player.
+    await roomRef.child("snapshot").set({
+      snake,p2,food,score,updatedAt:Date.now()
+    });
+
+  },150);
+
+  toast("Online match started!");
+}
+
+document.getElementById("createRoom").onclick=createRoom;
+document.getElementById("joinRoom").onclick=joinRoom;
+
+// ============================================
+// 12. INITIALIZATION
+// ============================================
+
+function initialize() {
+  updateDashboard();
+  renderShop();
+  draw();
+
+  if(!firebaseReady) {
+    document.getElementById("onlineStatus").textContent=
+      "Firebase initialization failed. Check your configuration.";
+  }
+}
+
+initialize();
+
+</script>
+</body>
+</html>
